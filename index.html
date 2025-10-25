@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bacteria ID Study Quiz</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card-hover {
+      transition: all 0.2s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // ---------- BACTERIA DATABASE ----------
+    const BACTERIA_DATA = [
+      {
+        name: "Listeria and Corynebacterium",
+        gram: "positive",
+        shape: "bacilli",
+        oxReq: "aerobic",
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Bacillus",
+        gram: "positive",
+        shape: "bacilli",
+        oxReq: "aerobic",
+        encapsulated: true,
+        sporeForming: true
+      },
+      {
+        name: "Clostridioides",
+        gram: "positive",
+        shape: "bacilli",
+        oxReq: "anaerobic",
+        encapsulated: false,
+        sporeForming: true
+      },
+      {
+        name: "Staphylococcus saprophyticus and Staphylococcus epidermidis",
+        gram: "positive",
+        shape: "staphylococci",
+        oxReq: "aerobic",
+        catalase: "positive",
+        coagulase: "negative",
+        encapsulated: false,
+        sporeForming: false,
+        note: "CoNS = Coagulase Negative Staphylococcus"
+      },
+      {
+        name: "Staphylococcus aureus",
+        gram: "positive",
+        shape: "staphylococci",
+        oxReq: "aerobic",
+        catalase: "positive",
+        coagulase: "positive",
+        encapsulated: true,
+        sporeForming: false
+      },
+      {
+        name: "Streptococcus mutans and Streptococcus mitis",
+        gram: "positive",
+        shape: "streptococci",
+        oxReq: "aerobic",
+        catalase: "negative",
+        hemolysis: "alpha",
+        optochin: "resistant",
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Streptococcus pneumoniae",
+        gram: "positive",
+        shape: "streptococci",
+        oxReq: "aerobic",
+        catalase: "negative",
+        hemolysis: "alpha",
+        optochin: "sensitive",
+        encapsulated: true,
+        sporeForming: false
+      },
+      {
+        name: "Streptococcus agalactiae (Group B Strep)",
+        gram: "positive",
+        shape: "streptococci",
+        oxReq: "aerobic",
+        catalase: "negative",
+        hemolysis: "beta",
+        bacitracin: "resistant",
+        encapsulated: true,
+        sporeForming: false
+      },
+      {
+        name: "Streptococcus pyogenes (Group A Strep)",
+        gram: "positive",
+        shape: "streptococci",
+        oxReq: "aerobic",
+        catalase: "negative",
+        hemolysis: "beta",
+        bacitracin: "sensitive",
+        encapsulated: true,
+        sporeForming: false
+      },
+      {
+        name: "Streptococcus bovis (nonenterococcus)",
+        gram: "positive",
+        shape: "streptococci",
+        oxReq: "aerobic",
+        catalase: "negative",
+        hemolysis: "gamma",
+        naclGrowth: false,
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Enterococcus faecium and Enterococcus faecalis",
+        gram: "positive",
+        shape: "streptococci",
+        oxReq: "aerobic",
+        catalase: "negative",
+        hemolysis: "gamma",
+        naclGrowth: true,
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Nocardia",
+        gram: "positive",
+        shape: "branching",
+        oxReq: "aerobic",
+        acidFast: "weak",
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Actinomyces",
+        gram: "positive",
+        shape: "branching",
+        oxReq: "anaerobic",
+        acidFast: "no",
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Neisseria gonorrhoeae and Moraxella spp.",
+        gram: "negative",
+        shape: "diplococci",
+        oxReq: "aerobic",
+        maltose: "negative",
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Neisseria meningitidis",
+        gram: "negative",
+        shape: "diplococci",
+        oxReq: "aerobic",
+        maltose: "positive",
+        encapsulated: true,
+        sporeForming: false
+      },
+      {
+        name: "Acinetobacter, Brucella, and F. tularensis",
+        gram: "negative",
+        shape: "coccobacilli",
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Haemophilus influenzae and Bordetella pertussis",
+        gram: "negative",
+        shape: "coccobacilli",
+        encapsulated: true,
+        sporeForming: false
+      },
+      {
+        name: "Shigella",
+        gram: "negative",
+        shape: "bacilli",
+        lactose: "negative",
+        oxidase: "negative",
+        h2s: "negative",
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Yersinia",
+        gram: "negative",
+        shape: "bacilli",
+        lactose: "negative",
+        oxidase: "negative",
+        h2s: "negative",
+        encapsulated: true,
+        sporeForming: false
+      },
+      {
+        name: "Salmonella",
+        gram: "negative",
+        shape: "bacilli",
+        lactose: "negative",
+        oxidase: "negative",
+        h2s: "positive",
+        encapsulated: true,
+        sporeForming: false
+      },
+      {
+        name: "Proteus",
+        gram: "negative",
+        shape: "bacilli",
+        lactose: "negative",
+        oxidase: "negative",
+        h2s: "positive",
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Pseudomonas",
+        gram: "negative",
+        shape: "bacilli",
+        lactose: "negative",
+        oxidase: "positive",
+        encapsulated: true,
+        sporeForming: false
+      },
+      {
+        name: "Citrobacter and Serratia",
+        gram: "negative",
+        shape: "bacilli",
+        lactose: "slow",
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Enterobacter",
+        gram: "negative",
+        shape: "bacilli",
+        lactose: "fast",
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Klebsiella",
+        gram: "negative",
+        shape: "bacilli",
+        lactose: "fast",
+        encapsulated: true,
+        sporeForming: false
+      },
+      {
+        name: "Escherichia coli",
+        gram: "negative",
+        shape: "bacilli",
+        lactose: "fast",
+        encapsulated: "meningeal strains only",
+        sporeForming: false
+      },
+      {
+        name: "Campylobacter jejuni",
+        gram: "negative",
+        shape: "comma",
+        oxidase: "positive",
+        grows42C: true,
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Vibrio cholerae",
+        gram: "negative",
+        shape: "comma",
+        oxidase: "positive",
+        alkalineMedia: true,
+        encapsulated: false,
+        sporeForming: false
+      },
+      {
+        name: "Helicobacter pylori",
+        gram: "negative",
+        shape: "comma",
+        oxidase: "positive",
+        urease: "positive",
+        encapsulated: false,
+        sporeForming: false
+      }
+    ];
+
+    const ATTR_IMG = {
+      "gram-positive-staphylococci": { url: "https://www.atsu.edu/faculty/chamberlain/mosdoh/images/gmposcocci.jpg", caption: "Positive Gram stain, staphylococci" },
+      "gram-positive-streptococci": { url: "https://i0.wp.com/microbeonline.com/wp-content/uploads/2021/05/enterococcus-gram-positive-oval-cocci-in-pairs.jpg?ssl=1", caption: "Positive Gram stain, streptococci" },
+      "gram-positive-bacilli": { url: "https://www.weber.edu/wsuimages/kendalbeazer/AerobicGramRods/BacillusSubtilis.jpg", caption: "Positive Gram stain, bacilli" },
+      "gram-positive-branching": { url: "https://www.idimages.org/images/organisms/A00010/A00010_04_m_lab.jpg", caption: "Positive Gram stain, branching" },
+      "gram-negative-diplococci": { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Gonococcal_urethritis_PHIL_4085_lores.jpg/1920px-Gonococcal_urethritis_PHIL_4085_lores.jpg", caption: "Negative Gram stain, diplococci" },
+      "gram-negative-coccobacilli": { url: "https://www.bioedonline.org/BioEd/cache/file/845CDE08-60CF-42D1-B033829FA616283E.jpg", caption: "Negative Gram stain, coccobacilli" },
+      "gram-negative-bacilli": { url: "https://www.atsu.edu/faculty/chamberlain/mosdoh/images/gmnegrod.jpg", caption: "Negative Gram stain, bacilli" },
+      "gram-negative-comma": { url: "https://media.sciencephoto.com/image/c0573205/800wm/C0573205-Vibrio_comma_bacteria,_light_micrograph.jpg", caption: "Negative Gram stain, comma-shaped" },
+      "alpha-hemolysis": { url: "https://www.shutterstock.com/image-photo/alpha-hemolysis-on-blood-agar-600nw-1020756763.jpg", caption: "Alpha hemolysis (partial)" },
+      "beta-hemolysis": { url: "https://open.maricopa.edu/app/uploads/sites/287/2022/01/Beta-hemolysis-.jpg", caption: "Beta hemolysis (complete)" },
+      "gamma-hemolysis": { url: "https://open.maricopa.edu/app/uploads/sites/287/2022/01/Gamma-hemolysis-.jpg", caption: "Gamma (no hemolysis)" },
+      "catalase-positive": { url: "https://live.staticflickr.com/2130/2414768507_6b5bcf3ebe_c.jpg", caption: "" },
+      "catalase-negative": { url: "https://live.staticflickr.com/2086/2414769831_5d340320de_c.jpg", caption: "" },
+      "bacitracin-sensitive": { url: "https://ars.els-cdn.com/content/image/3-s2.0-B9780750601870500079-f02-14-9780750601870.jpg", caption: "Bacitracin sensitivity (zone around disk)" },
+      "bacitracin-resistant": { url: "https://www.mdpi.com/vetsci/vetsci-10-00642/article_deploy/html/images/vetsci-10-00642-g004-550.jpg", caption: "Bacitracin resistant (no zone)" },
+      "optochin-sensitive": { url: "https://www.keyscientific.com/image.php?type=P&id=2286", caption: "Optochin sensitive (zone around disk)" },
+      "optochin-resistant": { url: "https://www.mdpi.com/vetsci/vetsci-10-00642/article_deploy/html/images/vetsci-10-00642-g004-550.jpg", caption: "Optochin resistant (no zone)" },
+      "coagulase-positive": { url: "https://open.maricopa.edu/app/uploads/sites/297/2022/09/Coagulase-positive-1536x1152.jpg", caption: "" },
+      "coagulase-negative": { url: "https://open.maricopa.edu/app/uploads/sites/297/2022/09/Coagulase-Negative-1536x1152.jpg", caption: "" },
+      "oxidase-positive": { url: "https://files.mtstatic.com/site_4463/61583/0?Expires=1761430059&Signature=cqUOIPoGlD2UhKTiS5O1fcAHSzzC0PSJr5MI1v0uuitCm2qSJGzGmcC-DGPB0Geh6AS5lvHdy3rTDvrFip-lGogoxexPF4SajeEphwZMwyNB3qkTNuCQdwjwYwWxrT2bsDKMiPM-813x6rVfEzfPVa5ZDM9M6-OwNGVa3ovJLyA_&Key-Pair-Id=APKAJ5Y6AV4GI7A555NA", caption: "Oxidase positive (purple)", crop: "positive" },
+      "oxidase-negative": { url: "https://files.mtstatic.com/site_4463/61583/0?Expires=1761430059&Signature=cqUOIPoGlD2UhKTiS5O1fcAHSzzC0PSJr5MI1v0uuitCm2qSJGzGmcC-DGPB0Geh6AS5lvHdy3rTDvrFip-lGogoxexPF4SajeEphwZMwyNB3qkTNuCQdwjwYwWxrT2bsDKMiPM-813x6rVfEzfPVa5ZDM9M6-OwNGVa3ovJLyA_&Key-Pair-Id=APKAJ5Y6AV4GI7A555NA", caption: "Oxidase negative (no color change)", crop: "negative" },
+      "urease-positive": { url: "https://axiommedicals.com/cdn/shop/products/Halyard-Rapid-Urease-Test-CLIA-Waived_grande.jpg?v=1620503016", caption: "Urease positive (pink)" },
+      "h2s-positive": { url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRyUYFHf83YLvKTGQ13mXRlHtpHGyTdzwcGA&s", caption: "H₂S production (blackening)" },
+      "h2s-negative": { url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTMIjH08018mgqTKFBsIPFT5iuoRciJ5p3CxA&s", caption: "H₂S negative (no blackening)" },
+      "acid-fast-weak": { url: "https://upload.wikimedia.org/wikipedia/commons/5/57/Nocardia_gram_and_acid_fast.jpg", caption: "Weak acid fast (Nocardia-like)" },
+      "acid-fast-no": { url: "https://upload.wikimedia.org/wikipedia/commons/5/57/Nocardia_gram_and_acid_fast.jpg", caption: "Acid fast negative" },
+      "maltose-positive": { url: "https://vumicro.com/wp-content/uploads/2022/07/yelybynnnn-2018_07_01-17_21_39-UTC.jpg", caption: "" },
+      "maltose-negative": { url: "https://vumicro.com/wp-content/uploads/2022/07/redybynnnn-2018_07_01-17_21_39-UTC.jpg", caption: "" },
+      "nacl-growth": { url: "https://hardydiagnostics.com/media/catalog/product/cache/f24493ff63c624d7411d9ab6aa8cf8ad/k/4/k49_1.jpg", caption: "Growth in 6.5% NaCl" },
+      "nacl-no-growth": { url: "https://www.medline.com/media/catalog/sku/HAD/120x120/HADR27_PRI01.JPGg", caption: "No growth in 6.5% NaCl" },
+      "lactose-fast": { url: "https://cwoer.ccbcmd.edu/science/microbiology/lab%20manual/lab12/images/MAC_EC_sf_crop_arrows.jpg", caption: "Fast" },
+      "lactose-slow": { url: "https://cwoer.ccbcmd.edu/science/microbiology/lab%20manual/lab12/images/MAC_EC_sf_crop_arrows.jpg", caption: "Slow" },
+      "lactose-negative": { url: "https://cwoer.ccbcmd.edu/science/microbiology/lab%20manual/lab12/images/MAC%20none%202_final.jpg", caption: "Macconkey Agar" },
+      "grows-42c": { url: "https://microbiologyinfo.com/wp-content/uploads/2019/04/featured-growth-at-42-test.jpg.webp", caption: "Grows at 42°C" },
+      "alkaline-media": { url: "https://ichef.bbci.co.uk/images/ic/480xn/p01ghr6y.jpg", caption: "Grows in alkaline media" }
+    };
+
+    function buildCluesForCard(bacteria) {
+      const clues = [];
+      
+      if (bacteria.gram && bacteria.shape) {
+        const key = `gram-${bacteria.gram}-${bacteria.shape}`;
+        clues.push({ key, hint: "Gram stain & shape", img: ATTR_IMG[key] });
+      }
+      
+      if (bacteria.oxReq) {
+        clues.push({ key: "ox-req", hint: `Oxygen requirement: ${bacteria.oxReq}`, img: null });
+      }
+      
+      if (bacteria.hemolysis) {
+        const hemKey = `${bacteria.hemolysis}-hemolysis`;
+        let hemDisplay = bacteria.hemolysis === "alpha" ? "α (partial)" : 
+                         bacteria.hemolysis === "beta" ? "β (complete)" : "γ (none)";
+        clues.push({ key: hemKey, hint: `Hemolysis: ${hemDisplay}`, img: ATTR_IMG[hemKey] });
+      }
+      
+      if (bacteria.catalase) {
+        const catKey = `catalase-${bacteria.catalase}`;
+        clues.push({ key: catKey, hint: `Catalase: ${bacteria.catalase}`, img: ATTR_IMG[catKey] });
+      }
+      
+      if (bacteria.coagulase) {
+        const coagKey = `coagulase-${bacteria.coagulase}`;
+        clues.push({ key: coagKey, hint: `Coagulase: ${bacteria.coagulase}`, img: ATTR_IMG[coagKey] });
+      }
+      
+      if (bacteria.bacitracin) {
+        const bacKey = `bacitracin-${bacteria.bacitracin}`;
+        clues.push({ key: bacKey, hint: `Bacitracin: ${bacteria.bacitracin}`, img: ATTR_IMG[bacKey] });
+      }
+      
+      if (bacteria.optochin) {
+        const optKey = `optochin-${bacteria.optochin}`;
+        clues.push({ key: optKey, hint: `Optochin: ${bacteria.optochin}`, img: ATTR_IMG[optKey] });
+      }
+      
+      if (bacteria.oxidase) {
+        const oxKey = `oxidase-${bacteria.oxidase}`;
+        clues.push({ key: oxKey, hint: `Oxidase: ${bacteria.oxidase}`, img: ATTR_IMG[oxKey] });
+      }
+      
+      if (bacteria.urease) {
+        const ureKey = `urease-${bacteria.urease}`;
+        clues.push({ key: ureKey, hint: `Urease: ${bacteria.urease}`, img: ATTR_IMG[ureKey] });
+      }
+      
+      if (bacteria.h2s) {
+        const h2sKey = `h2s-${bacteria.h2s}`;
+        clues.push({ key: h2sKey, hint: `H₂S: ${bacteria.h2s}`, img: ATTR_IMG[h2sKey] });
+      }
+      
+      if (bacteria.maltose) {
+        const maltKey = `maltose-${bacteria.maltose}`;
+        clues.push({ key: maltKey, hint: `Maltose utilization: ${bacteria.maltose}`, img: ATTR_IMG[maltKey] });
+      }
+      
+      if (bacteria.lactose) {
+        const lactKey = `lactose-${bacteria.lactose}`;
+        clues.push({ key: lactKey, hint: `Mcconkey Agar (${bacteria.lactose})`, img: ATTR_IMG[lactKey] });
+      }
+      
+      if (bacteria.acidFast) {
+        const afKey = `acid-fast-${bacteria.acidFast}`;
+        clues.push({ key: afKey, hint: `Acid fast: ${bacteria.acidFast}`, img: ATTR_IMG[afKey] });
+      }
+      
+      if (bacteria.naclGrowth !== undefined) {
+        const naclKey = bacteria.naclGrowth ? "nacl-growth" : "nacl-no-growth";
+        clues.push({ key: naclKey, hint: `6.5% NaCl: ${bacteria.naclGrowth ? "growth" : "no growth"}`, img: ATTR_IMG[naclKey] });
+      }
+      
+      if (bacteria.grows42C) {
+        clues.push({ key: "grows-42c", hint: "Grows at 42°C", img: ATTR_IMG["grows-42c"] });
+      }
+      
+      if (bacteria.alkalineMedia) {
+        clues.push({ key: "alkaline-media", hint: "Grows in alkaline media", img: ATTR_IMG["alkaline-media"] });
+      }
+      
+      if (bacteria.encapsulated === true) {
+        clues.push({ key: "encapsulated-yes", hint: "Encapsulated: yes", img: null });
+      } else if (bacteria.encapsulated === false) {
+        clues.push({ key: "encapsulated-no", hint: "Encapsulated: no", img: null });
+      } else if (typeof bacteria.encapsulated === "string") {
+        clues.push({ key: "encapsulated-special", hint: `Encapsulated: ${bacteria.encapsulated}`, img: null });
+      }
+      
+      if (bacteria.sporeForming === true) {
+        clues.push({ key: "spore-forming-yes", hint: "Spore forming: yes", img: null });
+      } else if (bacteria.sporeForming === false) {
+        clues.push({ key: "spore-forming-no", hint: "Spore forming: no", img: null });
+      }
+      
+      return clues;
+    }
+
+    // Calculate edit distance for spell checking
+    function editDistance(s1, s2) {
+      const len1 = s1.length, len2 = s2.length;
+      const matrix = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(0));
+      
+      for (let i = 0; i <= len1; i++) matrix[i][0] = i;
+      for (let j = 0; j <= len2; j++) matrix[0][j] = j;
+      
+      for (let i = 1; i <= len1; i++) {
+        for (let j = 1; j <= len2; j++) {
+          const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+          matrix[i][j] = Math.min(matrix[i - 1][j] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j - 1] + cost);
+        }
+      }
+      return matrix[len1][len2];
+    }
+
+    function isAnswerCorrect(userInput, correctName) {
+      if (!userInput) return false;
+      const u = userInput.toLowerCase().trim();
+      const c = correctName.toLowerCase();
+      if (u === c) return true;
+      
+      // Split by "and" to get individual species
+      const correctOptions = c.split(/\s+and\s+/).map(s => s.trim());
+      const hasMultipleSpecies = correctOptions.length > 1;
+      let matchedSpecies = [];
+      
+      // For each correct species option, check if user's answer contains it
+      for (let i = 0; i < correctOptions.length; i++) {
+        const option = correctOptions[i];
+        const correctWords = option.split(/[\s,]+/).filter(t => t.length > 2);
+        const userWords = u.split(/[\s,]+/).filter(t => t.length > 2);
+        
+        // Get the genus (rightmost word) - this is the species identifier
+        const genus = correctWords[correctWords.length - 1];
+        let matchedThisSpecies = false;
+        
+        // Check if user typed this specific genus/species
+        for (let userWord of userWords) {
+          if (userWord.length >= 3) {
+            // Exact match
+            if (userWord === genus) {
+              matchedThisSpecies = true;
+              break;
+            }
+            // Close spelling (edit distance)
+            if (editDistance(userWord, genus) <= Math.min(2, Math.floor(genus.length * 0.2))) {
+              matchedThisSpecies = true;
+              break;
+            }
+            // Substring match but only if substantial (at least 70% of the genus)
+            if (genus.includes(userWord) && userWord.length >= genus.length * 0.7) {
+              matchedThisSpecies = true;
+              break;
+            }
+            if (userWord.includes(genus) && genus.length >= userWord.length * 0.7) {
+              matchedThisSpecies = true;
+              break;
+            }
+          }
+        }
+        
+        // Also check species names (like "aureus", "epidermidis")
+        if (!matchedThisSpecies) {
+          for (let correctWord of correctWords) {
+            for (let userWord of userWords) {
+              if (userWord.length >= 4 && correctWord.length >= 4) {
+                if (correctWord.includes(userWord) && userWord.length >= correctWord.length * 0.7) {
+                  matchedThisSpecies = true;
+                  break;
+                }
+                if (userWord.includes(correctWord) && correctWord.length >= userWord.length * 0.7) {
+                  matchedThisSpecies = true;
+                  break;
+                }
+                if (editDistance(userWord, correctWord) <= Math.min(2, Math.floor(correctWord.length * 0.2))) {
+                  matchedThisSpecies = true;
+                  break;
+                }
+              }
+            }
+            if (matchedThisSpecies) break;
+          }
+        }
+        
+        if (matchedThisSpecies) {
+          matchedSpecies.push(i);
+        }
+      }
+      
+      // Return results based on how many species were matched
+      if (matchedSpecies.length === correctOptions.length) {
+        return { fully: true, partial: false };
+      } else if (matchedSpecies.length > 0 && hasMultipleSpecies) {
+        return { fully: false, partial: true };
+      }
+      return { fully: false, partial: false };
+    }
+    function BacteriaQuiz() {
+      const [cards, setCards] = useState([...BACTERIA_DATA]);
+      const [currentIndex, setCurrentIndex] = useState(-1);
+      const [answer, setAnswer] = useState("");
+      const [feedback, setFeedback] = useState(null);
+      const [showExplanation, setShowExplanation] = useState(false);
+      const [quizStarted, setQuizStarted] = useState(false);
+      const [wrongAnswers, setWrongAnswers] = useState([]);
+
+      const shuffleCards = () => {
+        const shuffled = [...BACTERIA_DATA];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        setCards(shuffled);
+      };
+
+      const startQuiz = () => {
+        shuffleCards();
+        setCurrentIndex(0);
+        setQuizStarted(true);
+        setWrongAnswers([]);
+        setAnswer("");
+        setFeedback(null);
+        setShowExplanation(false);
+      };
+
+      const nextCard = () => {
+        if (!feedback) return;
+        if (feedback.partial) return;
+        setCurrentIndex(currentIndex + 1);
+        setAnswer("");
+        setFeedback(null);
+        setShowExplanation(false);
+      };
+
+      const checkAnswer = () => {
+        const bacteria = cards[currentIndex];
+        const result = isAnswerCorrect(answer, bacteria.name);
+        const isFullyCorrect = typeof result === 'object' ? result.fully : result;
+        const isPartial = typeof result === 'object' ? result.partial : false;
+        
+        if (!isFullyCorrect) {
+          setWrongAnswers(prev => [...prev, { bacteriaName: bacteria.name, userAnswer: answer }]);
+        }
+        
+        setFeedback({ correct: isFullyCorrect, partial: isPartial, correctAnswer: bacteria.name });
+        setShowExplanation(true);
+      };
+
+      const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && answer.trim()) {
+          checkAnswer();
+        }
+      };
+
+      if (!quizStarted || currentIndex === -1) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-6">
+            <div className="bg-white rounded-2xl shadow-2xl p-12 max-w-3xl w-full fade-in">
+              <div className="mb-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto mb-6 flex items-center justify-center">
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h1 className="text-4xl font-bold text-gray-900 mb-4">Bacteria ID Study Quiz</h1>
+                <p className="text-lg text-gray-600 mb-2">Test your knowledge of bacterial identification</p>
+                <p className="text-sm text-gray-500">{BACTERIA_DATA.length} bacteria cards available</p>
+              </div>
+              
+              <button 
+                onClick={startQuiz}
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105 transition-all shadow-lg"
+              >
+                {quizStarted ? 'Restart Quiz' : 'Start Quiz'}
+              </button>
+              
+              <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  💡 <strong>Tip:</strong> Use the visual clues and lab test results to identify each bacterium. Algorithm charts will help you reason through your answer!
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (currentIndex >= cards.length) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-6">
+            <div className="bg-white rounded-2xl shadow-2xl p-12 max-w-3xl w-full fade-in">
+              <div className="mb-8 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mx-auto mb-6 flex items-center justify-center">
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-4xl font-bold text-gray-900 mb-4">Quiz Complete! 🎉</h2>
+                <p className="text-lg text-gray-600 mb-4">You've finished all {cards.length} bacteria cards</p>
+                <div className="text-2xl font-bold text-indigo-600">
+                  Score: {cards.length - wrongAnswers.length} / {cards.length}
+                </div>
+              </div>
+              
+              {wrongAnswers.length > 0 && (
+                <div className="mb-8 bg-red-50 rounded-xl p-6 border-2 border-red-200">
+                  <h3 className="text-xl font-bold text-red-900 mb-4">Review Your Mistakes</h3>
+                  <div className="space-y-3">
+                    {wrongAnswers.map((wrong, idx) => (
+                      <div key={idx} className="bg-white rounded-lg p-4 border border-red-200">
+                        <p className="text-sm text-gray-600">Your answer: <span className="font-semibold text-red-600">{wrong.userAnswer || "(blank)"}</span></p>
+                        <p className="text-sm text-gray-600">Correct answer: <span className="font-semibold text-green-600">{wrong.bacteriaName}</span></p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <button 
+                onClick={startQuiz}
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105 transition-all shadow-lg"
+              >
+                Restart Quiz
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      const bacteria = cards[currentIndex];
+      const clues = buildCluesForCard(bacteria);
+      const imageClues = clues.filter(c => c.img && c.img.url);
+      const textClues = clues.filter(c => !c.img || !c.img.url);
+
+      const algorithmChart = bacteria.gram === "positive" 
+        ? "https://upload.medbullets.com/topic/104192/images/gram%20positive%20-%20moises%20dominguez.jpg"
+        : "https://upload.medbullets.com/topic/104193/images/gram%20negative%20-%20moises%20dominguez.jpg";
+
+      return (
+        <div className="min-h-screen p-6">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 fade-in">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Bacteria ID Quiz</h1>
+                  <p className="text-gray-600 mt-1">Identify the organism based on the clues</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">Progress</p>
+                    <p className="text-2xl font-bold text-indigo-600">{currentIndex + 1} / {cards.length}</p>
+                  </div>
+                  <button 
+                    onClick={nextCard}
+                    disabled={!feedback || feedback.partial}
+                    className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
+                  >
+                    {currentIndex >= cards.length - 1 ? 'See Results →' : 'Next Card →'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - Clues */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Image Clues */}
+                {imageClues.length > 0 && (
+                  <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">Visual Clues</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {imageClues.map((clue, idx) => (
+                        <div key={idx} className="bg-gray-50 rounded-xl p-4 card-hover">
+                          {clue.img.url.startsWith('PLACEHOLDER') ? (
+                            <div className="w-full h-32 bg-blue-100 rounded-lg flex items-center justify-center text-xs text-gray-500 text-center p-2">
+                              Image placeholder<br/>(provide URL)
+                            </div>
+                          ) : (
+                            <img 
+                              src={clue.img.url} 
+                              alt={clue.hint} 
+                              className="w-full h-32 object-cover rounded-lg mb-3"
+                              style={clue.img.crop ? {
+                                clipPath: clue.img.crop === 'negative' ? 'inset(0 50% 0 25%)' : 'inset(0 15% 0 55%)'
+                              } : {}}
+                            />
+                          )}
+                          <p className="font-semibold text-sm text-gray-900">{clue.hint}</p>
+                          {clue.img.caption && (
+                            <p className="text-xs text-gray-500 mt-1">{clue.img.caption}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Text Clues */}
+                {textClues.length > 0 && (
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-lg p-6 fade-in">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Additional Attributes</h3>
+                    <div className="flex flex-wrap gap-3">
+                      {textClues.map((clue, idx) => (
+                        <div key={idx} className="bg-white px-4 py-2 rounded-lg border-2 border-indigo-200 shadow-sm">
+                          <p className="font-semibold text-sm text-gray-900">{clue.hint}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column - Answer */}
+              <div className="space-y-6">
+                <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Your Answer</h2>
+                  <input 
+                    type="text"
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="e.g., Staphylococcus aureus"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:outline-none text-gray-900 mb-4"
+                  />
+                  <button 
+                    onClick={checkAnswer}
+                    disabled={!answer.trim()}
+                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg"
+                  >
+                    Check Answer
+                  </button>
+
+                  {/* Feedback */}
+                  {feedback && (
+                    <div className={`mt-4 p-4 rounded-xl fade-in ${feedback.correct ? 'bg-green-100 border-2 border-green-300' : feedback.partial ? 'bg-blue-100 border-2 border-blue-300' : 'bg-yellow-100 border-2 border-yellow-300'}`}>
+                      <p className={`font-bold text-lg ${feedback.correct ? 'text-green-800' : feedback.partial ? 'text-blue-800' : 'text-yellow-800'}`}>
+                        {feedback.correct ? '✓ Correct!' : feedback.partial ? '⚠ Partially Correct!' : '✗ Incorrect'}
+                      </p>
+                      <p className={`${feedback.correct ? 'text-green-900' : feedback.partial ? 'text-blue-900' : 'text-yellow-900'} mt-2`}>
+                        <strong>Complete answer:</strong> {feedback.correctAnswer}
+                      </p>
+                      {feedback.partial && (
+                        <p className="text-blue-900 mt-2 font-semibold">
+                          💡 You got one species! There's another one - try again!
+                        </p>
+                      )}
+                      {bacteria.note && (
+                        <p className="text-gray-700 text-sm mt-2 italic">{bacteria.note}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Algorithm Chart */}
+                {showExplanation && (
+                  <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+                    <h3 className="text-lg font-bold text-gray-900 mb-3">
+                      📊 {bacteria.gram === "positive" ? "Gram-Positive" : "Gram-Negative"} Algorithm
+                    </h3>
+                    <img 
+                      src={algorithmChart} 
+                      alt="Algorithm chart"
+                      className="w-full rounded-lg border-2 border-gray-200"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Full-Width Algorithm Chart */}
+            {feedback && (
+              <div className="mt-6 bg-white rounded-2xl shadow-lg p-6 fade-in">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                  📊 {bacteria.gram === "positive" ? "Gram-Positive" : "Gram-Negative"} Algorithm Chart
+                </h3>
+                <div className="max-w-6xl mx-auto">
+                  <img 
+                    src={algorithmChart} 
+                    alt="Algorithm chart"
+                    className="w-full rounded-lg border-2 border-gray-200 cursor-pointer hover:border-indigo-400 transition-colors"
+                    onClick={() => window.open(algorithmChart, '_blank')}
+                    title="Click to open full size"
+                  />
+                  <p className="text-sm text-gray-500 text-center mt-3">💡 Click to open full size in new tab</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<BacteriaQuiz />, document.getElementById('root'));
+  </script>
+</body>
+</html>
